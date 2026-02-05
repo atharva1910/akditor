@@ -4,9 +4,24 @@ use ratatui::{
     widgets::{Paragraph, Widget},
 };
 use crossterm::event::KeyEvent;
-use crate::frames::FramesFn;
+use crate::{
+    frames:: FramesFn,
+    events::AKEvent,    
+};
+use std::{
+    collections::VecDeque,
+    cell::RefCell,
+    rc::Rc,
+};
 
 pub struct StatusBar {
+    queue: Rc<RefCell<VecDeque<AKEvent>>>,
+}
+
+impl StatusBar {
+    pub fn new(queue: Rc<RefCell<VecDeque<AKEvent>>>) -> StatusBar {
+        Self{queue}
+    }
 }
 
 impl FramesFn for StatusBar {

@@ -1,14 +1,19 @@
 use crate::{
     frames:: FramesFn,
     cursor::{CursorMove, Cursor},
+    events::AKEvent,
 };
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
     widgets::{Paragraph, Widget},
 };
-
+use std::{
+    collections::VecDeque,
+    cell::RefCell,
+    rc::Rc,
+};
 
 const GAP_BUFFER_SIZE: usize = 1024;
 const GAP_BUFFER_CHAR: char = ' ';
@@ -19,18 +24,12 @@ pub struct FileFrame {
     buffer: Vec<char>,
     cursor: Cursor,
     name: String,
+    queue: Rc<RefCell<VecDeque<AKEvent>>>,
 }
 
 impl FramesFn for FileFrame {
     fn handle_key_event(&mut self, key: KeyEvent) {
-        // Handle key events specific to FileFrame state
-        if key.is_press() {
-            if key.modifiers == KeyModifiers::CONTROL {
-        //        self.handle_ctrl_commands(key);
-            } else {
-                self.handle_key_event_pressed(key);
-            }
-        }
+        self.handle_key_event_pressed(key);
     }
 
     fn render(&self, area: Rect, buf: &mut Buffer) {
@@ -52,13 +51,16 @@ impl FramesFn for FileFrame {
 }
 
 impl FileFrame {
-    pub fn new(cols: u16, rows: u16) -> Box<FileFrame> {
+    pub fn new(queue: Rc<RefCell<VecDeque<AKEvent>>>,
+               cols: u16, rows: u16) -> Box<FileFrame> {
+
         Box::new(Self {
             gap_start: 0,
             gap_end: GAP_BUFFER_SIZE - 1,
             buffer: vec![GAP_BUFFER_CHAR; GAP_BUFFER_SIZE],
             cursor: Cursor::new(cols, rows),
             name: "scratch".to_string(),
+            queue
         })
     }
 

@@ -3,11 +3,11 @@ mod logger;
 mod file_frame;
 mod cursor;
 mod editor;
-mod ctrl;
+mod modifiers;
 mod status_bar;
+mod events;
 
 use crate::editor::Editor;
-use frames::FramesFn;
 use crossterm::event;
 
 
@@ -16,7 +16,7 @@ fn main() {
     let mut editor = Editor::new(term.size().unwrap());
 
     while !editor.quit() {
-        term.draw(|f| editor.draw(f));
+        let _ = term.draw(|f| editor.draw(f));
 
         if let Ok(event) = event::read() {
             editor.handle_event(event);

@@ -1,8 +1,9 @@
 use crate::{
-    ctrl::Modifiers,
+    modifiers::Modifiers,
     file_frame::FileFrame,
     frames::FramesFn,
-    status_bar::StatusBar
+    status_bar::StatusBar,
+    events::AKEvent,
 };
 use crossterm::event::{
     self,
@@ -25,20 +26,22 @@ use std::{
 pub struct Editor {
     frame_stack: Vec<Box<dyn FramesFn>>,
     cur_frame: Option<usize>,
-    modifier: Option<Modifiers>,
     status_bar: StatusBar,
-    event_loop: Rc<RefCell<VecDeque<i32>>>,
+    event_loop: Rc<RefCell<VecDeque<AKEvent>>>,
+    modifier: Modifiers,
 }
 
 impl Editor {
     //    pub fn new(size: ratatui::layout::Size, logger: &'a Logger) -> Self {
     pub fn new(size: Size) -> Self {
-        let scratch = FileFrame::new(size.width, size.height);
+        let queue =  Rc::new(RefCell::new(VecDeque::new()));
+        let scratch = FileFrame::new(Rc::clone(&queue),size.width, size.height);
         Editor {
             frame_stack: vec![scratch],
             cur_frame: Some(0),
-            modifier: None,
-            status_bar: StatusBar {},
+            modifier: Modifiers::new(Rc::clone(&queue)),
+            status_bar: StatusBar::new(Rc::clone(&queue)),
+            event_loop: queue
         }
     }
 
@@ -70,41 +73,11 @@ impl Editor {
         }
 
         if (key.modifiers == KeyModifiers::CONTROL &&
-            self.modifier.is_none()) ||
-            self.modifier.is_some() {
-            self.handle_ctrl_event(key);
+            self.modifier.primary_modifier.is_none()) ||
+            self.modifier.primary_modifier.is_some() {
+            self.modifier.handle_modifier_key(key);
         } else if let Some(idx) = self.cur_frame {
             self.frame_stack[idx].handle_key_event(key);
-        }
-    }
-
-    fn handle_modifier_fn(&mut self, key: KeyEvent) {
-        if let Some(modifier) = self.modifier {
-            match key.code {
-                event::KeyCode::Char(_) => modifier.handle_modifier_fn(key),
-                _ => panic!("Modifier fn key {:?} not supported", key),
-            }
-        }
-    }
-
-    fn handle_modifier(&mut self, key: KeyEvent) {
-        match key.code {
-            event::KeyCode::Char(c) => {
-                match c {
-                    'x' => self.modifier = Some(Modifiers::CTRL_X),
-                    'c' => self.modifier = Some(Modifiers::CTRL_C),
-                    _ => panic!("Modifier notsupported {:?}", key ),
-                }
-            }
-            _=> panic!("Only chars allowed for ctrl cmds: {:?}", key)
-        }
-    }
-
-    fn handle_ctrl_event(&mut self, key: KeyEvent) {
-        if self.modifier.is_some() {
-            self.handle_modifier_fn(key);
-        } else {
-            self.handle_modifier(key);
         }
     }
 }
@@ -118,7 +91,7 @@ impl Widget for &Editor {
 
         let [mode_area, status_area] = layout.areas(area);
         if let Some(idx) = self.cur_frame {
-            self.frame_stack[0].render(mode_area, buf);
+            self.frame_stack[idx].render(mode_area, buf);
         }
         self.status_bar.render(status_area, buf);
     }
