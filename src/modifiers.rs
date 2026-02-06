@@ -60,6 +60,7 @@ impl Modifiers {
         match key.code {
             KeyCode::Char(c) => {
                 match c {
+                    'f' => AKEvent::send_event(Rc::clone(&self.queue)),
                     _ => panic!("CtrlX notsupported {:?}", key ),
                 }
             }

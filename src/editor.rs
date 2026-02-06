@@ -29,20 +29,36 @@ pub struct Editor {
     status_bar: StatusBar,
     event_loop: Rc<RefCell<VecDeque<AKEvent>>>,
     modifier: Modifiers,
+    size: Size,
+    pub quit: bool,
 }
 
 impl Editor {
     //    pub fn new(size: ratatui::layout::Size, logger: &'a Logger) -> Self {
     pub fn new(size: Size) -> Self {
         let queue =  Rc::new(RefCell::new(VecDeque::new()));
-        let scratch = FileFrame::new(Rc::clone(&queue),size.width, size.height);
+        queue.borrow_mut().push_back(AKEvent::NewBuffer);
+
         Editor {
-            frame_stack: vec![scratch],
-            cur_frame: Some(0),
+            frame_stack: Vec::new(),
+            cur_frame: None,
             modifier: Modifiers::new(Rc::clone(&queue)),
             status_bar: StatusBar::new(Rc::clone(&queue)),
-            event_loop: queue
+            event_loop: queue,
+            size,
+            quit: false,
         }
+    }
+
+    pub fn update(&mut self) {
+        if self.event_loop.borrow_mut().is_empty() {
+            return;
+        }
+
+        let _ = self.event_loop.borrow_mut().pop_front().unwrap();
+        let scratch = FileFrame::new(Rc::clone(&self.event_loop),self.size.width, self.size.height);
+        self.frame_stack.push(scratch);
+        self.cur_frame = Some(0);
     }
 
     pub fn draw(&self, frame: &mut Frame) {
@@ -86,7 +102,8 @@ impl Widget for &Editor {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::new(
             Direction::Vertical,
-            [Constraint::Percentage(95), Constraint::Percentage(5)],
+            //[Constraint::Percentage(95), Constraint::Percentage(5)],
+            [Constraint::Percentage(90), Constraint::Percentage(10)],
         );
 
         let [mode_area, status_area] = layout.areas(area);

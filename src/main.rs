@@ -15,7 +15,8 @@ fn main() {
     let mut term = ratatui::init();
     let mut editor = Editor::new(term.size().unwrap());
 
-    while !editor.quit() {
+    while !editor.quit {
+        editor.update();
         let _ = term.draw(|f| editor.draw(f));
 
         if let Ok(event) = event::read() {

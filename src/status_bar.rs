@@ -1,12 +1,12 @@
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    widgets::{Paragraph, Widget},
+    widgets::{Paragraph, Widget, Block, Borders},
 };
 use crossterm::event::KeyEvent;
 use crate::{
     frames:: FramesFn,
-    events::AKEvent,    
+    events::AKEvent,
 };
 use std::{
     collections::VecDeque,
@@ -26,7 +26,7 @@ impl StatusBar {
 
 impl FramesFn for StatusBar {
     fn render(&self, area: Rect, buf: &mut Buffer)  {
-        let para = Paragraph::new("status_bar");
+        let para = Paragraph::new("status_bar").block(Block::new().borders(Borders::ALL));
         para.render(area, buf);
     }
     fn handle_key_event(&mut self, key: KeyEvent) {
