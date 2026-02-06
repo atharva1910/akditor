@@ -1,15 +1,10 @@
 use crate::{
-    modifiers::Modifiers,
-    file_frame::FileFrame,
-    frames::FramesFn,
-    status_bar::StatusBar,
-    events::AKEvent,
+     events::AKEvent, file_frame::FileFrame, frames::FramesFn, list_buffer::ListBuffer, modifiers::Modifiers, status_bar::StatusBar
 };
 use crossterm::event::{
     self,
     Event,
     KeyEvent,
-    KeyModifiers
 };
 use ratatui::{
     buffer::Buffer,
@@ -38,11 +33,11 @@ impl Editor {
     //    pub fn new(size: ratatui::layout::Size, logger: &'a Logger) -> Self {
     pub fn new(size: Size) -> Self {
         let queue =  Rc::new(RefCell::new(VecDeque::new()));
-        let scratch = FileFrame::new(Rc::clone(&queue),size.width, size.height);
+        queue.borrow_mut().push_back(AKEvent::NewBuffer);
 
         Editor {
-            frame_stack: vec![scratch],
-            cur_frame: Some(0),
+            frame_stack: Vec::new(),
+            cur_frame: None,
             modifier: Modifiers::new(Rc::clone(&queue)),
             status_bar: StatusBar::new(Rc::clone(&queue)),
             event_loop: queue,
@@ -57,10 +52,21 @@ impl Editor {
             return;
         }
 
-        let _ = self.event_loop.borrow_mut().pop_front().unwrap();
-        let scratch = FileFrame::new(Rc::clone(&self.event_loop),self.cols, self.rows);
-        self.frame_stack.push(scratch);
-        self.cur_frame = Some(self.frame_stack.len()-1);
+        let event = self.event_loop.borrow_mut().pop_front().unwrap();
+        match event {
+            AKEvent::NewBuffer => {
+                let scratch = FileFrame::new(Rc::clone(&self.event_loop),self.cols, self.rows);
+                self.push_frame(scratch, true);
+            },
+            AKEvent::ListBuffer => {
+                let mut frame_info: Vec<String> = Vec::new();
+                for _ in self.frame_stack.iter() {
+                    frame_info.push(String::from("test"));
+                }
+                let list_buf = ListBuffer::new(Rc::clone(&self.event_loop), frame_info);
+                self.push_frame(list_buf, true);
+            }
+        }
     }
 
     pub fn draw(&self, frame: &mut Frame) {
@@ -80,9 +86,6 @@ impl Editor {
         self.rows = rows;
 
         // ToDO : Update all frames
-        if let Some(idx) = self.cur_frame {
-            self.frame_stack[idx].resize(cols, rows);
-        }
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
@@ -92,23 +95,37 @@ impl Editor {
 
         if self.modifier.is_modifier_key(key) {
             self.modifier.handle_modifier_key(key);
-        } else if let Some(idx) = self.cur_frame {
-            self.frame_stack[idx].handle_key_event(key);
+        } else if let Some(i) = self.cur_frame {
+            self.frame_stack[i].handle_key_event(key);
         }
     }
+
+    fn push_frame(&mut self, frame: Box<dyn FramesFn>, active: bool) {
+        self.frame_stack.push(frame);
+        if active {
+            self.cur_frame = Some(self.frame_stack.len() - 1);
+        }
+    }
+
 }
 
 impl Widget for &Editor {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::new(
             Direction::Vertical,
-            //[Constraint::Percentage(95), Constraint::Percentage(5)],
             [Constraint::Percentage(90), Constraint::Percentage(10)],
         );
 
         let [mode_area, status_area] = layout.areas(area);
-        if let Some(idx) = self.cur_frame {
-            self.frame_stack[idx].render(mode_area, buf);
+
+        let layout = Layout::new(
+            Direction::Horizontal,
+            [Constraint::Percentage(2), Constraint::Percentage(98)],
+        );
+        let [num_area, mode_area] = layout.areas(mode_area);
+
+        if let Some(i) = self.cur_frame {
+            self.frame_stack[i].render(mode_area, buf);
         }
         self.status_bar.render(status_area, buf);
     }

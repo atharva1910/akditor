@@ -7,7 +7,6 @@ mod modifiers;
 mod status_bar;
 mod events;
 mod list_buffer;
-
 use crate::editor::Editor;
 use crossterm::event;
 
