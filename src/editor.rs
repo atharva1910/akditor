@@ -29,7 +29,8 @@ pub struct Editor {
     status_bar: StatusBar,
     event_loop: Rc<RefCell<VecDeque<AKEvent>>>,
     modifier: Modifiers,
-    size: Size,
+    cols: u16,
+    rows: u16,
     pub quit: bool,
 }
 
@@ -37,15 +38,16 @@ impl Editor {
     //    pub fn new(size: ratatui::layout::Size, logger: &'a Logger) -> Self {
     pub fn new(size: Size) -> Self {
         let queue =  Rc::new(RefCell::new(VecDeque::new()));
-        queue.borrow_mut().push_back(AKEvent::NewBuffer);
+        let scratch = FileFrame::new(Rc::clone(&queue),size.width, size.height);
 
         Editor {
-            frame_stack: Vec::new(),
-            cur_frame: None,
+            frame_stack: vec![scratch],
+            cur_frame: Some(0),
             modifier: Modifiers::new(Rc::clone(&queue)),
             status_bar: StatusBar::new(Rc::clone(&queue)),
             event_loop: queue,
-            size,
+            cols: size.width,
+            rows: size.height,
             quit: false,
         }
     }
@@ -56,17 +58,13 @@ impl Editor {
         }
 
         let _ = self.event_loop.borrow_mut().pop_front().unwrap();
-        let scratch = FileFrame::new(Rc::clone(&self.event_loop),self.size.width, self.size.height);
+        let scratch = FileFrame::new(Rc::clone(&self.event_loop),self.cols, self.rows);
         self.frame_stack.push(scratch);
-        self.cur_frame = Some(0);
+        self.cur_frame = Some(self.frame_stack.len()-1);
     }
 
     pub fn draw(&self, frame: &mut Frame) {
         frame.render_widget(self, frame.area());
-    }
-
-    pub fn quit(&self) -> bool {
-        self.cur_frame.is_none()
     }
 
     pub fn handle_event(&mut self, event: Event) {
@@ -78,6 +76,10 @@ impl Editor {
     }
 
     fn resize(&mut self, cols: u16, rows: u16) {
+        self.cols = cols;
+        self.rows = rows;
+
+        // ToDO : Update all frames
         if let Some(idx) = self.cur_frame {
             self.frame_stack[idx].resize(cols, rows);
         }
@@ -88,9 +90,7 @@ impl Editor {
             return;
         }
 
-        if (key.modifiers == KeyModifiers::CONTROL &&
-            self.modifier.primary_modifier.is_none()) ||
-            self.modifier.primary_modifier.is_some() {
+        if self.modifier.is_modifier_key(key) {
             self.modifier.handle_modifier_key(key);
         } else if let Some(idx) = self.cur_frame {
             self.frame_stack[idx].handle_key_event(key);
