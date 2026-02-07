@@ -24,7 +24,10 @@ impl StatusBar {
 }
 impl FramesFn for StatusBar {
     fn render(&self, area: Rect, buf: &mut Buffer)  {
-        let para = Paragraph::new("status_bar").block(Block::new().borders(Borders::ALL));
+        let para = Paragraph::new("status_bar")
+            .block(Block::new()
+                   .borders(Borders::ALL)
+                   .border_type(ratatui::widgets::BorderType::Rounded));
         para.render(area, buf);
     }
     fn handle_key_event(&mut self, key: KeyEvent) {

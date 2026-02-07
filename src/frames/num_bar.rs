@@ -1,7 +1,7 @@
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    widgets::{Paragraph, Widget, Block, Borders},
+    widgets::{Paragraph, Widget, Block, Borders, BorderType},
 };
 use crossterm::event::KeyEvent;
 use crate::{
@@ -26,7 +26,15 @@ impl NumBar {
 
 impl FramesFn for NumBar {
     fn render(&self, area: Rect, buf: &mut Buffer)  {
-        let para = Paragraph::new("status_bar").block(Block::new().borders(Borders::ALL));
+        let mut text: String = String::new();
+        for i in 1..= area.height  {
+            text += format!("{}\n", i).as_str();
+        }
+        let para = Paragraph::new(text)
+            .block(Block::new()
+                  .borders(Borders::ALL)
+                  .border_type(ratatui::widgets::BorderType::Rounded)
+            );
         para.render(area, buf);
     }
     fn handle_key_event(&mut self, key: KeyEvent) {

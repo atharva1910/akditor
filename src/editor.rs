@@ -2,6 +2,7 @@ use crate::{
     frames::events::AKEvent,
     frames::frame_fn::FramesFn,
     frames::status_bar::StatusBar,
+    frames::num_bar::NumBar,
     frames::file_frame::FileFrame,
     frames::list_buffer::ListBuffer,
     modifiers::Modifiers,
@@ -24,14 +25,15 @@ use std::{
 };
 
 pub struct Editor {
-    frame_stack: Vec<Box<dyn FramesFn>>,
-    cur_frame: Option<usize>,
-    status_bar: Box<StatusBar>,
-    event_loop: Rc<RefCell<VecDeque<AKEvent>>>,
-    modifier: Modifiers,
     cols: u16,
     rows: u16,
     pub quit: bool,
+    frame_stack: Vec<Box<dyn FramesFn>>,
+    cur_frame: Option<usize>,
+    status_bar: Box<StatusBar>,
+    num_bar: Box<NumBar>,
+    event_loop: Rc<RefCell<VecDeque<AKEvent>>>,
+    modifier: Modifiers,
 }
 
 impl Editor {
@@ -45,6 +47,7 @@ impl Editor {
             cur_frame: None,
             modifier: Modifiers::new(Rc::clone(&queue)),
             status_bar: StatusBar::new(Rc::clone(&queue)),
+            num_bar: NumBar::new(Rc::clone(&queue)),
             event_loop: queue,
             cols: size.width,
             rows: size.height,
@@ -116,7 +119,7 @@ impl Widget for &Editor {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::new(
             Direction::Vertical,
-            [Constraint::Percentage(90), Constraint::Percentage(10)],
+            [Constraint::Percentage(95), Constraint::Percentage(5)],
         );
 
         let [mode_area, status_area] = layout.areas(area);
@@ -130,6 +133,7 @@ impl Widget for &Editor {
         if let Some(i) = self.cur_frame {
             self.frame_stack[i].render(mode_area, buf);
         }
+        self.num_bar.render(num_area, buf);
         self.status_bar.render(status_area, buf);
     }
 }
