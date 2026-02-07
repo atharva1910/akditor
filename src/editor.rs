@@ -1,5 +1,10 @@
 use crate::{
-     events::AKEvent, file_frame::FileFrame, frames::FramesFn, list_buffer::ListBuffer, modifiers::Modifiers, status_bar::StatusBar
+    frames::events::AKEvent,
+    frames::frame_fn::FramesFn,
+    frames::status_bar::StatusBar,
+    frames::file_frame::FileFrame,
+    frames::list_buffer::ListBuffer,
+    modifiers::Modifiers,
 };
 use crossterm::event::{
     self,
@@ -21,7 +26,7 @@ use std::{
 pub struct Editor {
     frame_stack: Vec<Box<dyn FramesFn>>,
     cur_frame: Option<usize>,
-    status_bar: StatusBar,
+    status_bar: Box<StatusBar>,
     event_loop: Rc<RefCell<VecDeque<AKEvent>>>,
     modifier: Modifiers,
     cols: u16,
@@ -84,8 +89,6 @@ impl Editor {
     fn resize(&mut self, cols: u16, rows: u16) {
         self.cols = cols;
         self.rows = rows;
-
-        // ToDO : Update all frames
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {

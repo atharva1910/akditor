@@ -1,12 +1,8 @@
 mod frames;
 mod logger;
-mod file_frame;
 mod cursor;
 mod editor;
 mod modifiers;
-mod status_bar;
-mod events;
-mod list_buffer;
 use crate::editor::Editor;
 use crossterm::event;
 

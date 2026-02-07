@@ -4,7 +4,7 @@ use std::{
     cell::RefCell,
     rc::Rc,
 };
-use crate::events::AKEvent;
+use crate::frames::events::AKEvent;
 
 #[derive(Copy, Clone)]
 pub enum PrimaryModifier {

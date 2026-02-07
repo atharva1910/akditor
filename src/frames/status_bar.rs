@@ -5,8 +5,8 @@ use ratatui::{
 };
 use crossterm::event::KeyEvent;
 use crate::{
-    frames:: FramesFn,
-    events::AKEvent,
+    frames::frame_fn::FramesFn,
+    frames::events::AKEvent,
 };
 use std::{
     collections::VecDeque,
@@ -17,13 +17,11 @@ use std::{
 pub struct StatusBar {
     queue: Rc<RefCell<VecDeque<AKEvent>>>,
 }
-
 impl StatusBar {
-    pub fn new(queue: Rc<RefCell<VecDeque<AKEvent>>>) -> StatusBar {
-        Self{queue}
+    pub fn new(queue: Rc<RefCell<VecDeque<AKEvent>>>) -> Box<StatusBar> {
+        Box::new(Self{queue})
     }
 }
-
 impl FramesFn for StatusBar {
     fn render(&self, area: Rect, buf: &mut Buffer)  {
         let para = Paragraph::new("status_bar").block(Block::new().borders(Borders::ALL));
@@ -31,5 +29,8 @@ impl FramesFn for StatusBar {
     }
     fn handle_key_event(&mut self, key: KeyEvent) {
         panic!("Key: {:?} not handled in status_bar", key);
+    }
+    fn quit(&self) -> bool {
+        false
     }
 }

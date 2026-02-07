@@ -4,8 +4,8 @@ use std::{
     rc::Rc,
 };
 use crate::{
-    frames::FramesFn,
-    events::AKEvent,
+    frames::frame_fn::FramesFn,
+    frames::events::AKEvent,
 };
 use ratatui::{
     buffer::Buffer,
@@ -26,6 +26,7 @@ impl ListBuffer {
 }
 
 impl FramesFn for ListBuffer {
+
     fn handle_key_event(&mut self, key: KeyEvent) {
         panic!("list_buf key event not handled {:?}", key);
     }
@@ -38,5 +39,9 @@ impl FramesFn for ListBuffer {
         }
         let para = Paragraph::new(text).block(Block::new().borders(Borders::ALL));
         para.render(area, buf);
+    }
+
+    fn quit(&self) -> bool {
+        false
     }
 }

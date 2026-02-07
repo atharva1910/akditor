@@ -6,13 +6,6 @@ use ratatui::{
 
 pub trait FramesFn {
     fn render(&self, area: Rect, buf: &mut Buffer);
-    
     fn handle_key_event(&mut self, key: KeyEvent);
-
-    fn resize(&mut self, cols: u16, rows: u16) {
-    }
-    
-    fn quit(&self) -> bool {
-        false
-    }
+    fn quit(&self) -> bool;
 }

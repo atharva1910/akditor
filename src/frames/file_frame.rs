@@ -1,7 +1,7 @@
 use crate::{
-    frames:: FramesFn,
+    frames::frame_fn::FramesFn,
     cursor::{CursorMove, Cursor},
-    events::AKEvent,
+    frames::events::AKEvent,
 };
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
@@ -27,6 +27,19 @@ pub struct FileFrame {
     queue: Rc<RefCell<VecDeque<AKEvent>>>,
 }
 
+impl FileFrame {
+    pub fn new(queue: Rc<RefCell<VecDeque<AKEvent>>>, cols: u16, rows: u16) -> Box<FileFrame> {
+        Box::new(Self {
+            gap_start: 0,
+            gap_end: GAP_BUFFER_SIZE - 1,
+            buffer: vec![GAP_BUFFER_CHAR; GAP_BUFFER_SIZE],
+            cursor: Cursor::new(cols, rows),
+            name: "scratch".to_string(),
+            queue
+        })
+    }
+}
+
 impl FramesFn for FileFrame {
     fn handle_key_event(&mut self, key: KeyEvent) {
         self.handle_key_event_pressed(key);
@@ -39,29 +52,12 @@ impl FramesFn for FileFrame {
         para.render(area, buf);
     }
 
-    fn resize(&mut self, cols: u16, rows: u16) {
-        self.cursor.resize(cols, rows);
-    }
-
     fn quit(&self) -> bool {
         false
     }
 }
 
 impl FileFrame {
-    pub fn new(queue: Rc<RefCell<VecDeque<AKEvent>>>,
-               cols: u16, rows: u16) -> Box<FileFrame> {
-
-        Box::new(Self {
-            gap_start: 0,
-            gap_end: GAP_BUFFER_SIZE - 1,
-            buffer: vec![GAP_BUFFER_CHAR; GAP_BUFFER_SIZE],
-            cursor: Cursor::new(cols, rows),
-            name: "scratch".to_string(),
-            queue
-        })
-    }
-
     fn handle_char_input(&mut self, c: char) {
         self.buffer[self.gap_start] = c;
         self.gap_start += 1;
