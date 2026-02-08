@@ -12,15 +12,13 @@ fn main() {
     let mut editor = Editor::new(term.size().unwrap());
 
     while !editor.quit {
-        if !editor.update() {
-            break;
-        }
-
         let _ = term.draw(|f| editor.draw(f));
 
         if let Ok(event) = event::read() {
             editor.handle_event(event);
         }
+
+        editor.update();
     }
     ratatui::restore();
 }

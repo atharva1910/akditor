@@ -1,6 +1,6 @@
 use crate::{
     frames::frame_fn::FramesFn,
-    cursor::{CursorMove, Cursor},
+    cursor::cursor::{CursorMove, Cursor},
     frames::events::AKEvent,
 };
 use crossterm::event::{KeyCode, KeyEvent};

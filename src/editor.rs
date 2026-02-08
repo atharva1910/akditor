@@ -126,16 +126,18 @@ impl Editor {
 
 impl Widget for &Editor {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::new(
-            Direction::Vertical,
-            [Constraint::Percentage(95), Constraint::Percentage(5)],
+        let layout =
+            Layout::new(
+                Direction::Vertical,
+                [Constraint::Percentage(95), Constraint::Percentage(5)],
         );
 
         let [mode_area, status_area] = layout.areas(area);
 
-        let layout = Layout::new(
-            Direction::Horizontal,
-            [Constraint::Percentage(2), Constraint::Percentage(98)],
+        let layout =
+            Layout::new(
+                Direction::Horizontal,
+                [Constraint::Percentage(2), Constraint::Percentage(98)],
         );
         let [num_area, mode_area] = layout.areas(mode_area);
 
