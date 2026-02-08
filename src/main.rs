@@ -4,21 +4,10 @@ mod cursor;
 mod editor;
 mod modifiers;
 use crate::editor::Editor;
-use crossterm::event;
 
 
 fn main() {
     let mut term = ratatui::init();
-    let mut editor = Editor::new(term.size().unwrap());
-
-    while !editor.quit {
-        let _ = term.draw(|f| editor.draw(f));
-
-        if let Ok(event) = event::read() {
-            editor.handle_event(event);
-        }
-
-        editor.update();
-    }
+    Editor::new().run(&mut term);
     ratatui::restore();
 }

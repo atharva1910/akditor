@@ -1,11 +1,13 @@
 use crate::{
-    frames::events::AKEvent,
-    frames::frame_fn::FramesFn,
-    frames::status_bar::StatusBar,
-    frames::num_bar::NumBar,
-    frames::file_frame::FileFrame,
-    frames::list_buffer::ListBuffer,
-    frames::file_explorer::FileExp,
+    frames::{
+        events::AKEvent,
+        frame_fn::FramesFn,
+        status_bar::StatusBar,
+        num_bar::NumBar,
+        file_frame::FileFrame,
+        list_buffer::ListBuffer,
+        file_explorer::FileExp,
+    },
     modifiers::Modifiers,
 };
 use crossterm::event::{
@@ -14,10 +16,7 @@ use crossterm::event::{
     KeyEvent,
 };
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect, Size},
-    widgets::Widget,
-    Frame,
+    DefaultTerminal, Frame, buffer::Buffer, layout::{Constraint, Direction, Layout, Position, Rect, Size}, widgets::Widget
 };
 use std::{
     collections::VecDeque,
@@ -25,23 +24,26 @@ use std::{
     rc::Rc,
 };
 
+enum CursorFrame {
+    Status,
+    File,
+}
 pub struct Editor {
-    size: Size,
-    pub quit: bool,
+    quit: bool,
     frame_stack: Vec<Box<dyn FramesFn>>,
     cur_frame: Option<usize>,
     status_bar: Box<StatusBar>,
     num_bar: Box<NumBar>,
     event_loop: Rc<RefCell<VecDeque<AKEvent>>>,
     modifier: Modifiers,
+    cursor_frame: CursorFrame
 }
 
 impl Editor {
     //    pub fn new(size: ratatui::layout::Size, logger: &'a Logger) -> Self {
-    pub fn new(size: Size) -> Self {
+    pub fn new() -> Self {
         let queue =  Rc::new(RefCell::new(VecDeque::new()));
         queue.borrow_mut().push_back(AKEvent::NewBuffer);
-
         Editor {
             frame_stack: Vec::new(),
             cur_frame: None,
@@ -49,21 +51,32 @@ impl Editor {
             status_bar: StatusBar::new(Rc::clone(&queue)),
             num_bar: NumBar::new(Rc::clone(&queue)),
             event_loop: queue,
-            size,
             quit: false,
+            cursor_frame: CursorFrame::File,
         }
     }
 
-    pub fn update(&mut self) -> bool {
+    pub fn run(&mut self, term: &mut DefaultTerminal) {
+        while !self.quit {
+            let _ = term.draw(|f| self.draw(f));
+
+            if let Ok(event) = event::read() {
+                self.handle_event(event);
+            }
+
+            self.update();
+        }
+    }
+
+    fn update(&mut self) {
         if self.event_loop.borrow_mut().is_empty() {
-            return true;
+            return;
         }
 
-        let mut ret = true;
         let event = self.event_loop.borrow_mut().pop_front().unwrap();
         match event {
             AKEvent::NewBuffer => {
-                let scratch = FileFrame::new(Rc::clone(&self.event_loop),self.size.width, self.size.height);
+                let scratch = FileFrame::new(Rc::clone(&self.event_loop));
                 self.push_frame(scratch, true);
             },
             AKEvent::FileExp => {
@@ -80,13 +93,44 @@ impl Editor {
             }
             AKEvent::Quit => {
                 self.quit = true;
-                ret = false;
             }
         }
-        return ret;
     }
 
-    pub fn draw(&self, frame: &mut Frame) {
+    fn draw_cursor(&self, frame: &mut Frame) {
+        match self.cursor_frame {
+            CursorFrame::Status => panic!("Cursor in status field not supported yet"),
+            _ => {
+                if let Some(i) = self.cur_frame {
+                    let (x, y) = self.frame_stack[i].get_cursor_pos();
+                }
+            }
+        }
+
+        let layout =
+            Layout::new(
+                Direction::Vertical,
+                [Constraint::Percentage(95), Constraint::Percentage(5)],
+        );
+
+        let [mode_area, status_area] = layout.areas(frame.area());
+
+        let layout =
+            Layout::new(
+                Direction::Horizontal,
+                [Constraint::Ratio(1, 20) ; 2]
+        );
+        let [num_area, mode_area] = layout.areas(mode_area);
+
+        frame.set_cursor_position(Position{
+            x: mode_area.x,
+            y: mode_area.y
+        });
+
+    }
+
+    fn draw(&self, frame: &mut Frame) {
+        self.draw_cursor(frame);
         frame.render_widget(self, frame.area());
     }
 
@@ -99,8 +143,8 @@ impl Editor {
     }
 
     fn resize(&mut self, cols: u16, rows: u16) {
-        self.size.width = cols;
-        self.size.height = rows;
+        //self.size.width = cols;
+        //self.size.height = rows;
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
@@ -121,7 +165,6 @@ impl Editor {
             self.cur_frame = Some(self.frame_stack.len() - 1);
         }
     }
-
 }
 
 impl Widget for &Editor {
@@ -137,7 +180,7 @@ impl Widget for &Editor {
         let layout =
             Layout::new(
                 Direction::Horizontal,
-                [Constraint::Percentage(2), Constraint::Percentage(98)],
+                [Constraint::Ratio(1, 20) ; 2]
         );
         let [num_area, mode_area] = layout.areas(mode_area);
 

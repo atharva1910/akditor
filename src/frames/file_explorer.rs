@@ -1,6 +1,5 @@
 use crate::{
     frames::frame_fn::FramesFn,
-    cursor::cursor::{CursorMove, Cursor},
     frames::events::AKEvent,
 };
 use crossterm::event::{KeyCode, KeyEvent};
@@ -22,14 +21,12 @@ const GAP_BUFFER_CHAR: char = ' ';
 
 pub struct FileExp {
     queue: Rc<RefCell<VecDeque<AKEvent>>>,
-    cursor: Cursor,
 }
 
 impl FileExp {
     pub fn new(queue: Rc<RefCell<VecDeque<AKEvent>>>) -> Box<FileExp> {
         Box::new(Self {
             queue,
-            cursor: Cursor::new(0,0),
         })
     }
 }

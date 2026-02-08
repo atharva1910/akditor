@@ -32,7 +32,7 @@ impl FramesFn for NumBar {
         }
         let para = Paragraph::new(text)
             .block(Block::new()
-                  .borders(Borders::ALL)
+                  .borders(Borders::RIGHT)
                   .border_type(ratatui::widgets::BorderType::Rounded)
             );
         para.render(area, buf);
