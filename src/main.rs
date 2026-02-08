@@ -12,7 +12,10 @@ fn main() {
     let mut editor = Editor::new(term.size().unwrap());
 
     while !editor.quit {
-        editor.update();
+        if !editor.update() {
+            break;
+        }
+
         let _ = term.draw(|f| editor.draw(f));
 
         if let Ok(event) = event::read() {

@@ -1,7 +1,8 @@
 use chrono;
 use std::io::Write;
 
-pub struct Logger {}
+pub struct Logger {
+}
 
 impl Logger {
     pub fn new() -> Self {

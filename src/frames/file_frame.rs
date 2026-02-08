@@ -33,7 +33,7 @@ impl FileFrame {
             gap_start: 0,
             gap_end: GAP_BUFFER_SIZE - 1,
             buffer: vec![GAP_BUFFER_CHAR; GAP_BUFFER_SIZE],
-            cursor: Cursor::new(cols, rows),
+            cursor: Cursor::new(0, 0),
             name: "scratch".to_string(),
             queue
         })
@@ -46,9 +46,15 @@ impl FramesFn for FileFrame {
     }
 
     fn render(&self, area: Rect, buf: &mut Buffer) {
-        let text = self.buffer[..self.gap_start].iter().collect::<String>()
+        let text =
+            self.buffer[..self.gap_start].iter().collect::<String>()
             + &self.buffer[self.gap_end..].iter().collect::<String>();
-        let para = Paragraph::new(text).block(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded));
+
+        let para =
+            Paragraph::new(text)
+            .block(Block::new()
+                   .borders(Borders::ALL)
+                   .border_type(BorderType::Rounded));
         para.render(area, buf);
     }
 
@@ -61,7 +67,7 @@ impl FileFrame {
     fn handle_char_input(&mut self, c: char) {
         self.buffer[self.gap_start] = c;
         self.gap_start += 1;
-        self.cursor.move_cursor(CursorMove::Right);
+        //self.cursor.move_cursor(CursorMove::Right);
     }
 
     fn handle_key_event_pressed(&mut self, key: KeyEvent) {
@@ -73,7 +79,7 @@ impl FileFrame {
             KeyCode::Enter => {
                 self.handle_char_input('\r');
                 self.handle_char_input('\n');
-                self.cursor.move_cursor(CursorMove::Down);
+                //self.cursor.move_cursor(CursorMove::Down);
             }
 
             KeyCode::Backspace => {

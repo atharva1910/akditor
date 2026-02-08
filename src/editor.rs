@@ -5,6 +5,7 @@ use crate::{
     frames::num_bar::NumBar,
     frames::file_frame::FileFrame,
     frames::list_buffer::ListBuffer,
+    frames::file_explorer::FileExp,
     modifiers::Modifiers,
 };
 use crossterm::event::{
@@ -25,8 +26,7 @@ use std::{
 };
 
 pub struct Editor {
-    cols: u16,
-    rows: u16,
+    size: Size,
     pub quit: bool,
     frame_stack: Vec<Box<dyn FramesFn>>,
     cur_frame: Option<usize>,
@@ -49,22 +49,26 @@ impl Editor {
             status_bar: StatusBar::new(Rc::clone(&queue)),
             num_bar: NumBar::new(Rc::clone(&queue)),
             event_loop: queue,
-            cols: size.width,
-            rows: size.height,
+            size,
             quit: false,
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> bool {
         if self.event_loop.borrow_mut().is_empty() {
-            return;
+            return true;
         }
 
+        let mut ret = true;
         let event = self.event_loop.borrow_mut().pop_front().unwrap();
         match event {
             AKEvent::NewBuffer => {
-                let scratch = FileFrame::new(Rc::clone(&self.event_loop),self.cols, self.rows);
+                let scratch = FileFrame::new(Rc::clone(&self.event_loop),self.size.width, self.size.height);
                 self.push_frame(scratch, true);
+            },
+            AKEvent::FileExp => {
+                let file_exp = FileExp::new(Rc::clone(&self.event_loop));
+                self.push_frame(file_exp, true);
             },
             AKEvent::ListBuffer => {
                 let mut frame_info: Vec<String> = Vec::new();
@@ -74,7 +78,12 @@ impl Editor {
                 let list_buf = ListBuffer::new(Rc::clone(&self.event_loop), frame_info);
                 self.push_frame(list_buf, true);
             }
+            AKEvent::Quit => {
+                self.quit = true;
+                ret = false;
+            }
         }
+        return ret;
     }
 
     pub fn draw(&self, frame: &mut Frame) {
@@ -90,8 +99,8 @@ impl Editor {
     }
 
     fn resize(&mut self, cols: u16, rows: u16) {
-        self.cols = cols;
-        self.rows = rows;
+        self.size.width = cols;
+        self.size.height = rows;
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {

@@ -65,17 +65,32 @@ impl Modifiers {
     }
 
     fn handle_ctrl_x(&mut self, key: KeyEvent) {
-        match key.code {
-            KeyCode::Char(c) => {
-                match c {
-                    'f' => self.queue.borrow_mut().push_back(AKEvent::NewBuffer),
-                    'b' => self.queue.borrow_mut().push_back(AKEvent::ListBuffer),
-                    _ => panic!("CtrlX notsupported {:?}", key ),
-                }
+        if key.modifiers == KeyModifiers::CONTROL {
+            match key.code {
+                KeyCode::Char(c) => {
+                    match c {
+                        'c' => self.queue.borrow_mut().push_back(AKEvent::Quit),
+                        _ => panic!("CtrlX notsupported {:?}", key ),
+                    }
 
-                self.mod_stack.clear();
+                    self.mod_stack.clear();
+                }
+                _=> panic!("Only chars allowed for ctrl cmds: {:?}", key)
             }
-            _=> panic!("Only chars allowed for ctrl cmds: {:?}", key)
+        } else {
+            match key.code {
+                KeyCode::Char(c) => {
+                    match c {
+                        'f' => self.queue.borrow_mut().push_back(AKEvent::FileExp),
+                        'b' => self.queue.borrow_mut().push_back(AKEvent::ListBuffer),
+
+                        _ => panic!("CtrlX notsupported {:?}", key ),
+                    }
+
+                    self.mod_stack.clear();
+                }
+                _=> panic!("Only chars allowed for ctrl cmds: {:?}", key)
+            }
         }
     }
 
