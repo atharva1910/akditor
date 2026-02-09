@@ -6,7 +6,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    widgets::{Paragraph, Widget, Block, Borders, BorderType},
+    widgets::{Block, BorderType, Borders, Paragraph, Widget, Wrap},
 };
 use std::{
     collections::VecDeque,
@@ -50,7 +50,9 @@ impl FramesFn for FileFrame {
             self.buffer[..self.gap_start].iter().collect::<String>()
             + &self.buffer[self.gap_end..].iter().collect::<String>();
         let para =
-            Paragraph::new(text);
+            Paragraph::new(text).wrap(Wrap{
+                trim: true
+            });
         para.render(area, buf);
     }
 

@@ -97,40 +97,37 @@ impl Editor {
         }
     }
 
-    fn draw_cursor(&self, frame: &mut Frame) {
-        match self.cursor_frame {
-            CursorFrame::Status => panic!("Cursor in status field not supported yet"),
-            _ => {
-                if let Some(i) = self.cur_frame {
-                    let (x, y) = self.frame_stack[i].get_cursor_pos();
-                }
-            }
-        }
-
+    fn draw(&self, frame: &mut Frame) {
         let layout =
             Layout::new(
                 Direction::Vertical,
                 [Constraint::Percentage(95), Constraint::Percentage(5)],
-        );
+            );
 
         let [mode_area, status_area] = layout.areas(frame.area());
 
-        let layout =
-            Layout::new(
-                Direction::Horizontal,
-                [Constraint::Ratio(1, 20) ; 2]
-        );
-        let [num_area, mode_area] = layout.areas(mode_area);
+        //let layout =
+        //    Layout::new(
+        //        Direction::Horizontal,
+        //        [Constraint::Fill(1), Constraint::Percentage(98)],
+        //    );
+        //let [num_area, mode_area] = layout.areas(mode_area);
 
-        frame.set_cursor_position(Position{
-            x: mode_area.x,
-            y: mode_area.y
+        let mut x: u16 = 0;
+        let mut y: u16 = 0;
+
+        match self.cursor_frame {
+            CursorFrame::Status => panic!("Cursor in status field not supported yet"),
+            _ => {
+                if let Some(i) = self.cur_frame {
+                    (x, y) = self.frame_stack[i].get_cursor_pos();
+                }
+            }
+        }
+        frame.set_cursor_position(Position {
+            x: mode_area.x + x,
+            y: mode_area.y + y
         });
-
-    }
-
-    fn draw(&self, frame: &mut Frame) {
-        self.draw_cursor(frame);
         frame.render_widget(self, frame.area());
     }
 
@@ -177,17 +174,17 @@ impl Widget for &Editor {
 
         let [mode_area, status_area] = layout.areas(area);
 
-        let layout =
-            Layout::new(
-                Direction::Horizontal,
-                [Constraint::Ratio(1, 20) ; 2]
-        );
-        let [num_area, mode_area] = layout.areas(mode_area);
+        //let layout =
+        //    Layout::new(
+        //        Direction::Horizontal,
+        //        [Constraint::Fill(1), Constraint::Percentage(98)],
+        //);
+        //let [num_area, mode_area] = layout.areas(mode_area);
 
         if let Some(i) = self.cur_frame {
             self.frame_stack[i].render(mode_area, buf);
         }
-        self.num_bar.render(num_area, buf);
+        //self.num_bar.render(num_area, buf);
         self.status_bar.render(status_area, buf);
     }
 }
