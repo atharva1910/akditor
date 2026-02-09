@@ -5,3 +5,4 @@ pub mod status_bar;
 pub mod num_bar;
 pub mod events;
 pub mod file_explorer;
+mod cursor;

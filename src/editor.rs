@@ -36,14 +36,20 @@ pub struct Editor {
     num_bar: Box<NumBar>,
     event_loop: Rc<RefCell<VecDeque<AKEvent>>>,
     modifier: Modifiers,
-    cursor_frame: CursorFrame
+    cursor_frame: CursorFrame,
+    area: Rect,
+    status_area: Rect,
+    mode_area: Rect,
 }
 
 impl Editor {
     //    pub fn new(size: ratatui::layout::Size, logger: &'a Logger) -> Self {
-    pub fn new() -> Self {
+
+    pub fn new(area: Rect) -> Self {
         let queue =  Rc::new(RefCell::new(VecDeque::new()));
         queue.borrow_mut().push_back(AKEvent::NewBuffer);
+        let (mode_area, status_area) = Editor::calculate_area(area);
+
         Editor {
             frame_stack: Vec::new(),
             cur_frame: None,
@@ -53,6 +59,9 @@ impl Editor {
             event_loop: queue,
             quit: false,
             cursor_frame: CursorFrame::File,
+            area,
+            mode_area,
+            status_area
         }
     }
 
@@ -63,9 +72,19 @@ impl Editor {
             if let Ok(event) = event::read() {
                 self.handle_event(event);
             }
-
             self.update();
         }
+    }
+
+    fn calculate_area(area: Rect) -> (Rect, Rect) {
+    let layout =
+            Layout::new(
+                Direction::Vertical,
+                [Constraint::Percentage(95), Constraint::Percentage(5)],
+        );
+
+        let [mode_area, status_area] = layout.areas(area);
+        (mode_area, status_area)
     }
 
     fn update(&mut self) {
@@ -76,7 +95,7 @@ impl Editor {
         let event = self.event_loop.borrow_mut().pop_front().unwrap();
         match event {
             AKEvent::NewBuffer => {
-                let scratch = FileFrame::new(Rc::clone(&self.event_loop));
+                let scratch = FileFrame::new(Rc::clone(&self.event_loop), self.mode_area);
                 self.push_frame(scratch, true);
             },
             AKEvent::FileExp => {
@@ -98,21 +117,6 @@ impl Editor {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let layout =
-            Layout::new(
-                Direction::Vertical,
-                [Constraint::Percentage(95), Constraint::Percentage(5)],
-            );
-
-        let [mode_area, status_area] = layout.areas(frame.area());
-
-        //let layout =
-        //    Layout::new(
-        //        Direction::Horizontal,
-        //        [Constraint::Fill(1), Constraint::Percentage(98)],
-        //    );
-        //let [num_area, mode_area] = layout.areas(mode_area);
-
         let mut x: u16 = 0;
         let mut y: u16 = 0;
 
@@ -125,8 +129,8 @@ impl Editor {
             }
         }
         frame.set_cursor_position(Position {
-            x: mode_area.x + x,
-            y: mode_area.y + y
+            x: self.mode_area.x + x,
+            y: self.mode_area.y + y
         });
         frame.render_widget(self, frame.area());
     }
@@ -140,8 +144,7 @@ impl Editor {
     }
 
     fn resize(&mut self, cols: u16, rows: u16) {
-        //self.size.width = cols;
-        //self.size.height = rows;
+        panic!("Resize not implemented yet {}x{}", cols, rows);
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
@@ -166,25 +169,10 @@ impl Editor {
 
 impl Widget for &Editor {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout =
-            Layout::new(
-                Direction::Vertical,
-                [Constraint::Percentage(95), Constraint::Percentage(5)],
-        );
-
-        let [mode_area, status_area] = layout.areas(area);
-
-        //let layout =
-        //    Layout::new(
-        //        Direction::Horizontal,
-        //        [Constraint::Fill(1), Constraint::Percentage(98)],
-        //);
-        //let [num_area, mode_area] = layout.areas(mode_area);
-
+        assert!(area == self.area);
         if let Some(i) = self.cur_frame {
-            self.frame_stack[i].render(mode_area, buf);
+            self.frame_stack[i].render(self.mode_area, buf);
         }
-        //self.num_bar.render(num_area, buf);
-        self.status_bar.render(status_area, buf);
+        self.status_bar.render(self.status_area, buf);
     }
 }
