@@ -6,7 +6,7 @@ use crate::{
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Position, Rect},
     widgets::{Block, BorderType, Borders, Paragraph, Widget, Wrap},
 };
 use std::{
@@ -43,8 +43,8 @@ impl FileFrame {
 }
 
 impl FramesFn for FileFrame {
-    fn get_cursor_pos(&self) -> (u16, u16) {
-         (0,0)
+    fn get_cursor_pos(&self) -> Position {
+        self.cursor.get_cursor_pos()
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
@@ -65,13 +65,19 @@ impl FramesFn for FileFrame {
     fn quit(&self) -> bool {
         false
     }
+
+    fn resize(&mut self, area: Rect) {
+        assert!(self.area.x == 0 && self.area.y == 0);
+        self.area = area;
+        self.cursor.resize(self.area.width, self.area.height);
+    }
 }
 
 impl FileFrame {
     fn handle_char_input(&mut self, c: char) {
         self.buffer[self.gap_start] = c;
         self.gap_start += 1;
-        //self.cursor.move_cursor(CursorMove::Right);
+        self.cursor.move_cursor(CursorMove::Right);
     }
 
     fn handle_key_event_pressed(&mut self, key: KeyEvent) {

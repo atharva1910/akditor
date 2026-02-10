@@ -54,7 +54,7 @@ impl Editor {
             frame_stack: Vec::new(),
             cur_frame: None,
             modifier: Modifiers::new(Rc::clone(&queue)),
-            status_bar: StatusBar::new(Rc::clone(&queue)),
+            status_bar: StatusBar::new(Rc::clone(&queue), status_area),
             num_bar: NumBar::new(Rc::clone(&queue)),
             event_loop: queue,
             quit: false,
@@ -117,21 +117,25 @@ impl Editor {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let mut x: u16 = 0;
-        let mut y: u16 = 0;
+        let mut pos: Position = Position {
+            x: 0,
+            y: 0,
+        };
 
         match self.cursor_frame {
             CursorFrame::Status => panic!("Cursor in status field not supported yet"),
             _ => {
                 if let Some(i) = self.cur_frame {
-                    (x, y) = self.frame_stack[i].get_cursor_pos();
+                    pos = self.frame_stack[i].get_cursor_pos();
                 }
             }
         }
+
         frame.set_cursor_position(Position {
-            x: self.mode_area.x + x,
-            y: self.mode_area.y + y
+            x: self.mode_area.x + pos.x,
+            y: self.mode_area.y + pos.y
         });
+
         frame.render_widget(self, frame.area());
     }
 
@@ -144,7 +148,20 @@ impl Editor {
     }
 
     fn resize(&mut self, cols: u16, rows: u16) {
-        panic!("Resize not implemented yet {}x{}", cols, rows);
+        assert!(self.area.x == 0 && self.area.y == 0);
+        self.area.width = cols;
+        self.area.height = rows;
+
+        let (mode_area, status_area) = Editor::calculate_area(self.area);
+        self.mode_area = mode_area;
+        self.status_area = status_area;
+
+
+        for f in self.frame_stack.iter_mut() {
+            f.resize(mode_area);
+        }
+
+        self.status_bar.resize(status_area);
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {

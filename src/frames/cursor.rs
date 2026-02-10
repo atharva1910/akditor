@@ -1,3 +1,5 @@
+use ratatui::layout::Position;
+
 pub enum CursorMove {
     Up,
     Down,
@@ -23,7 +25,8 @@ impl Cursor {
     }
 
     pub fn resize(&mut self, cols: u16, rows: u16) {
-        self.cols = cols;n
+        assert!(self.x == 0 && self.y == 0);
+        self.cols = cols;
         self.rows = rows;
     }
 
@@ -65,11 +68,11 @@ impl Cursor {
         true
     }
 
-    pub fn show_cursor(&self, frame: &mut ratatui::Frame) {
-        frame.set_cursor_position(
-            ratatui::layout::Position {
-                x: self.x,
-                y: self.y
-            });
+
+    pub fn get_cursor_pos(&self) -> Position {
+        ratatui::layout::Position {
+            x: self.x,
+            y: self.y
+        }
     }
 }
