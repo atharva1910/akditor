@@ -80,7 +80,7 @@ impl Editor {
     let layout =
             Layout::new(
                 Direction::Vertical,
-                [Constraint::Percentage(95), Constraint::Percentage(5)],
+                [Constraint::Percentage(90), Constraint::Percentage(10)],
         );
 
         let [mode_area, status_area] = layout.areas(area);
@@ -88,30 +88,31 @@ impl Editor {
     }
 
     fn update(&mut self) {
-        if self.event_loop.borrow_mut().is_empty() {
-            return;
-        }
-
-        let event = self.event_loop.borrow_mut().pop_front().unwrap();
-        match event {
-            AKEvent::NewBuffer => {
-                let scratch = FileFrame::new(Rc::clone(&self.event_loop), self.mode_area);
-                self.push_frame(scratch, true);
-            },
-            AKEvent::FileExp => {
-                let file_exp = FileExp::new(Rc::clone(&self.event_loop));
-                self.push_frame(file_exp, true);
-            },
-            AKEvent::ListBuffer => {
-                let mut frame_info: Vec<String> = Vec::new();
-                for _ in self.frame_stack.iter() {
-                    frame_info.push(String::from("test"));
+        while !self.event_loop.borrow().is_empty() {
+            let event = self.event_loop.borrow_mut().pop_front().unwrap();
+            match event {
+                AKEvent::StatusBar(s) => {
+                    self.status_bar.set_display_string(s);
                 }
-                let list_buf = ListBuffer::new(Rc::clone(&self.event_loop), frame_info);
-                self.push_frame(list_buf, true);
-            }
-            AKEvent::Quit => {
-                self.quit = true;
+                AKEvent::NewBuffer => {
+                    let scratch = FileFrame::new(Rc::clone(&self.event_loop), self.mode_area);
+                    self.push_frame(scratch, true);
+                },
+                AKEvent::FileExp => {
+                    let file_exp = FileExp::new(Rc::clone(&self.event_loop));
+                    self.push_frame(file_exp, true);
+                },
+                AKEvent::ListBuffer => {
+                    let mut frame_info: Vec<String> = Vec::new();
+                    for _ in self.frame_stack.iter() {
+                        frame_info.push(String::from("test"));
+                    }
+                    let list_buf = ListBuffer::new(Rc::clone(&self.event_loop), frame_info);
+                    self.push_frame(list_buf, true);
+                }
+                AKEvent::Quit => {
+                    self.quit = true;
+                }
             }
         }
     }

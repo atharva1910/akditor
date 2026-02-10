@@ -19,6 +19,7 @@ pub struct StatusBar {
     queue: Rc<RefCell<VecDeque<AKEvent>>>,
     cursor: Cursor,
     area: Rect,
+    display_str: Option<String>,
 }
 
 impl StatusBar {
@@ -26,18 +27,28 @@ impl StatusBar {
         Box::new(Self{
             queue,
             cursor: Cursor::new(area.width, area.height),
-            area
+            area,
+            display_str: None
         })
+    }
+
+    pub fn set_display_string(&mut self, display_str: Option<String>) {
+        self.display_str = display_str;
     }
 }
 
 impl FramesFn for StatusBar {
     fn render(&self, area: Rect, buf: &mut Buffer)  {
-        let para = Paragraph::new("status_bar")
-            .block(Block::new()
-                   .borders(Borders::ALL)
-                   .border_type(ratatui::widgets::BorderType::Rounded));
-        para.render(area, buf);
+        if let Some(s) = self.display_str.clone() {
+            let para =
+                Paragraph::new(s)
+                .block(Block::new()
+                       .borders(Borders::ALL));
+            para.render(area, buf);
+        } else {
+            let blk = Block::new().borders(Borders::ALL);
+            blk.render(area, buf);
+        }
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {

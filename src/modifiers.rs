@@ -34,6 +34,12 @@ impl Modifiers {
 
     pub fn handle_modifier_key(&mut self, key: KeyEvent) {
         // Todo fix this when multiple modifers are used
+        if key.code == KeyCode::Char('g') {
+            self.mod_stack.clear();
+            self.queue.borrow_mut().push_back(AKEvent::StatusBar(None));
+            return;
+        }
+
         if self.mod_stack.len() != 0 {
             self.handle_secondary_key(key);
         } else {
@@ -55,8 +61,14 @@ impl Modifiers {
         match key.code {
             KeyCode::Char(c) => {
                 match c {
-                    'x' => self.mod_stack.push(PrimaryModifier::CtrlX),
-                    'c' => self.mod_stack.push(PrimaryModifier::CtrlC),
+                    'x' => {
+                        self.mod_stack.push(PrimaryModifier::CtrlX);
+                        self.queue.borrow_mut().push_back(AKEvent::StatusBar(Some("C-x".to_string())));
+                    }
+                    'c' => {
+                        self.mod_stack.push(PrimaryModifier::CtrlC);
+                        self.queue.borrow_mut().push_back(AKEvent::StatusBar(Some("C-c".to_string())));
+                    }
                     _ => panic!("Modifier notsupported {:?}", key ),
                 }
             },

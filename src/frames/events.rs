@@ -3,4 +3,5 @@ pub enum AKEvent {
     NewBuffer,
     FileExp,
     ListBuffer,
+    StatusBar(Option<String>),
 }
